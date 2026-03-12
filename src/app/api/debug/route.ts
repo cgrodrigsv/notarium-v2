@@ -6,17 +6,24 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     const dbUrl = process.env.DATABASE_URL || "";
-    const unpooledUrl = process.env.DATABASE_URL_UNPOOLED || "";
     
-    // Detailed inspection without exposing the password
+    // Obfuscated visualization of the string structure
+    // We show types of characters to see if there are spaces/newlines
+    const structure = dbUrl.split('').map((c, i) => {
+      if (i < 15 || i > dbUrl.length - 15) return c; // Show start and end
+      if (c === ':') return ':';
+      if (c === '@') return '@';
+      if (c === '/') return '/';
+      if (c === '?') return '?';
+      if (c === ' ') return '[SPACE]';
+      if (c === '\n') return '[NEWLINE]';
+      if (c === '\r') return '[CARRIAGE_RETURN]';
+      return '*';
+    }).join('');
+
     const status = {
-      hasDbUrl: !!dbUrl,
-      dbUrlLength: dbUrl.length,
-      startsWithQuote: dbUrl.startsWith('"') || dbUrl.startsWith("'"),
-      endsWithQuote: dbUrl.endsWith('"') || dbUrl.endsWith("'"),
-      startsWithPostgres: dbUrl.startsWith('postgresql://') || dbUrl.startsWith('postgres://'),
-      firstChar: dbUrl.length > 0 ? dbUrl[0] : 'EMPTY',
-      lastChar: dbUrl.length > 0 ? dbUrl[dbUrl.length - 1] : 'EMPTY',
+      length: dbUrl.length,
+      structure,
       nodeEnv: process.env.NODE_ENV,
     };
 
@@ -29,16 +36,19 @@ export async function GET() {
     });
   } catch (error: any) {
     const dbUrl = process.env.DATABASE_URL || "";
+    const structure = dbUrl.split('').map((c, i) => {
+      if (i < 15 || i > dbUrl.length - 15) return c;
+      if (' :@/?\n\r'.includes(c)) return c === ' ' ? '[SP]' : c;
+      return '*';
+    }).join('');
+
     return NextResponse.json({ 
       ok: false, 
       status: {
-        dbUrlLength: dbUrl.length,
-        hasDbUrl: !!dbUrl,
-        firstChar: dbUrl.length > 0 ? dbUrl[0] : 'EMPTY',
-        lastChar: dbUrl.length > 0 ? dbUrl[dbUrl.length - 1] : 'EMPTY',
+        length: dbUrl.length,
+        structure,
       },
       error: error.message,
-      stack: error.stack?.split('\n').slice(0, 3)
     }, { status: 500 });
   }
 }
