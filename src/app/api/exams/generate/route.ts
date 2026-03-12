@@ -90,8 +90,8 @@ export async function POST(request: Request) {
       prisma.attempt.create({
         data: { userId, mode, status: "IN_PROGRESS" },
       }),
-      // Only decrement for non-admin users with a plan
-      ...(user.role !== "ADMIN" ? [
+      // Only decrement for non-admin users in EXAM mode
+      ...(user.role !== "ADMIN" && mode === "EXAM" ? [
         prisma.user.update({
           where: { id: userId },
           data: { examsRemaining: { decrement: 1 } },
