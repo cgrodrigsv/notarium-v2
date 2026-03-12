@@ -3,9 +3,9 @@ export const dynamic = 'force-dynamic';
 
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 
-export default function ExamPage() {
+function ExamContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -209,5 +209,13 @@ export default function ExamPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function ExamPage() {
+  return (
+    <Suspense fallback={<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>Cargando examen...</div>}>
+      <ExamContent />
+    </Suspense>
   );
 }
