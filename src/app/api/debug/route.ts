@@ -8,12 +8,15 @@ export async function GET() {
     const dbUrl = process.env.DATABASE_URL || "";
     const unpooledUrl = process.env.DATABASE_URL_UNPOOLED || "";
     
-    // Check if variables are present and their lengths
+    // Detailed inspection without exposing the password
     const status = {
       hasDbUrl: !!dbUrl,
       dbUrlLength: dbUrl.length,
-      hasUnpooled: !!unpooledUrl,
-      unpooledLength: unpooledUrl.length,
+      startsWithQuote: dbUrl.startsWith('"') || dbUrl.startsWith("'"),
+      endsWithQuote: dbUrl.endsWith('"') || dbUrl.endsWith("'"),
+      startsWithPostgres: dbUrl.startsWith('postgresql://') || dbUrl.startsWith('postgres://'),
+      firstChar: dbUrl.length > 0 ? dbUrl[0] : 'EMPTY',
+      lastChar: dbUrl.length > 0 ? dbUrl[dbUrl.length - 1] : 'EMPTY',
       nodeEnv: process.env.NODE_ENV,
     };
 
@@ -31,6 +34,8 @@ export async function GET() {
       status: {
         dbUrlLength: dbUrl.length,
         hasDbUrl: !!dbUrl,
+        firstChar: dbUrl.length > 0 ? dbUrl[0] : 'EMPTY',
+        lastChar: dbUrl.length > 0 ? dbUrl[dbUrl.length - 1] : 'EMPTY',
       },
       error: error.message,
       stack: error.stack?.split('\n').slice(0, 3)
