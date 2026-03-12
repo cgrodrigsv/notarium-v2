@@ -241,9 +241,13 @@ function ExamContent() {
                   >
                     {submitting ? "Saliendo..." : (mode === "EXAM" ? "Cancelar Examen" : "Salir de Práctica")}
                   </button>
-                  {mode === "EXAM" && (
+                  {mode === "EXAM" ? (
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
                       * La cancelación con devolución de crédito solo es válida en la pregunta 1.
+                    </span>
+                  ) : (
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                      * El botón de salida rápida solo está disponible en la pregunta 1.
                     </span>
                   )}
                 </div>
