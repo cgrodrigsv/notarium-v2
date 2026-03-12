@@ -45,18 +45,23 @@ export async function POST(request: Request) {
     // 1. Get 20 random active questions
     // Since prisma does not have native ORDER BY RANDOM(), we can fetch IDs and pick random
     // or use $queryRaw. Since it's sqlite and for local development, raw query is fine:
+    console.log("Fetching random questions...");
     const randomQuestionsIds: { id: string }[] = await prisma.$queryRaw`
       SELECT id FROM Question WHERE isActive = true ORDER BY RANDOM() LIMIT 20;
     `;
 
+    console.log(`Found ${randomQuestionsIds.length} random questions.`);
+
     if (randomQuestionsIds.length < 20) {
+      console.warn("Not enough active questions found.");
       return NextResponse.json(
-        { error: "No hay suficientes preguntas activas en el banco (mínimo 20)." },
+        { error: `No hay suficientes preguntas activas en el banco (encontradas: ${randomQuestionsIds.length}, mínimo 20).` },
         { status: 400 }
       );
     }
 
     // 2. Fetch the full questions with options but WITHOUT isCorrect attribute
+    console.log("Fetching question details...");
     const questions = await prisma.question.findMany({
       where: {
         id: {
@@ -77,7 +82,10 @@ export async function POST(request: Request) {
       },
     });
 
+    console.log(`Fetched details for ${questions.length} questions.`);
+
     // 3. Create Attempt and decrement examsRemaining
+    console.log("Creating attempt and updating user...");
     const [attempt] = await prisma.$transaction([
       prisma.attempt.create({
         data: { userId, mode, status: "IN_PROGRESS" },
@@ -91,14 +99,16 @@ export async function POST(request: Request) {
       ] : [])
     ]);
 
+    console.log(`Attempt created: ${attempt.id}`);
+
     return NextResponse.json({
       attemptId: attempt.id,
       questions,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("POST /api/exams/generate error:", error);
     return NextResponse.json(
-      { error: "Error interno del servidor" },
+      { error: "Error interno del servidor", details: error.message },
       { status: 500 }
     );
   }
