@@ -41,7 +41,8 @@ function ExamContent() {
           setAttemptId(data.attemptId);
           setQuestions(data.questions);
         } else {
-          alert(data.error || "No se pudo generar el examen.");
+          const errorMsg = data.details ? `${data.error}\nDetalles: ${data.details}` : (data.error || "No se pudo generar el examen.");
+          alert(errorMsg);
           router.push("/panel");
         }
         setLoading(false);

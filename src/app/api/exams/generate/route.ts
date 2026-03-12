@@ -11,7 +11,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Usuario no autenticado." }, { status: 401 });
     }
 
-    // Check user's plan/license
+    // 0. Connectivity Check & Fetch User
+    console.log("Fetching user...");
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { planType: true, examsRemaining: true, trialExpiresAt: true, role: true }
@@ -43,11 +44,10 @@ export async function POST(request: Request) {
     }
 
     // 1. Get 20 random active questions
-    // Since prisma does not have native ORDER BY RANDOM(), we can fetch IDs and pick random
-    // or use $queryRaw. Since it's sqlite and for local development, raw query is fine:
+    // In PostgreSQL, identifiers are case-sensitive if quoted, and Prisma usually quotes them.
     console.log("Fetching random questions...");
     const randomQuestionsIds: { id: string }[] = await prisma.$queryRaw`
-      SELECT id FROM Question WHERE isActive = true ORDER BY RANDOM() LIMIT 20;
+      SELECT id FROM "Question" WHERE "isActive" = true ORDER BY RANDOM() LIMIT 20;
     `;
 
     console.log(`Found ${randomQuestionsIds.length} random questions.`);
