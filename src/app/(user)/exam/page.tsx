@@ -18,6 +18,7 @@ function ExamContent() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<Record<string, boolean>>({}); // For Practice mode
+  const [timeLeft, setTimeLeft] = useState(90 * 60); // 90 minutes in seconds
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -54,6 +55,63 @@ function ExamContent() {
     }
   }, [status, session, mode, router]);
 
+  const handleSubmit = async (isAuto = false) => {
+    if (!isAuto && Object.keys(answers).length < questions.length) {
+      const confirmIncomplete = confirm("No has respondido todas las preguntas. ¿Estás seguro de enviar el examen?");
+      if (!confirmIncomplete) return;
+    }
+
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/exams/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ attemptId, answers })
+      });
+      const data = await res.json();
+      
+      if (res.ok) {
+        router.push(`/exam/${attemptId}/results`);
+      } else {
+        alert(data.error || "Hubo un error al evaluar el examen.");
+        setSubmitting(false);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error de conexión...");
+      setSubmitting(false);
+    }
+  };
+
+  // Timer logic
+  useEffect(() => {
+    if (loading || !attemptId || submitting) return;
+
+    const timer = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          handleSubmit(true); // Auto-submit when time is up
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [loading, attemptId, submitting]);
+
+  const formatTime = (seconds: number) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    
+    if (h > 0) {
+      return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
+
   if (status === "loading" || loading) {
     return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', width: '100%' }}>Generando simulación...</div>;
   }
@@ -82,33 +140,6 @@ function ExamContent() {
     }
   };
 
-  const handleSubmit = async () => {
-    if (Object.keys(answers).length < questions.length) {
-      const confirmIncomplete = confirm("No has respondido todas las preguntas. ¿Estás seguro de enviar el examen?");
-      if (!confirmIncomplete) return;
-    }
-
-    setSubmitting(true);
-    try {
-      const res = await fetch("/api/exams/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ attemptId, answers })
-      });
-      const data = await res.json();
-      
-      if (res.ok) {
-        router.push(`/exam/${attemptId}/results`);
-      } else {
-        alert(data.error || "Hubo un error al evaluar el examen.");
-        setSubmitting(false);
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Error de conexión...");
-      setSubmitting(false);
-    }
-  };
 
   const handleCancel = async () => {
     if (!attemptId) return;
@@ -143,8 +174,26 @@ function ExamContent() {
         <h2 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--accent-color)' }}>
           {mode === "EXAM" ? "Simulador de Examen de Notariado" : "Modo Práctica Guiada"}
         </h2>
-        <div style={{ fontWeight: '500', color: 'var(--text-muted)' }}>
-          Pregunta {currentIndex + 1} de {questions.length}
+        <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '0.5rem', 
+            padding: '0.4rem 0.8rem', 
+            backgroundColor: timeLeft < 300 ? 'rgba(248, 81, 73, 0.15)' : 'rgba(88, 166, 255, 0.1)',
+            borderRadius: 'var(--radius-sm)',
+            border: `1px solid ${timeLeft < 300 ? '#f85149' : 'var(--accent-color)'}`,
+            color: timeLeft < 300 ? '#f85149' : 'var(--text-main)',
+            fontWeight: 700,
+            fontSize: '1rem',
+            fontVariantNumeric: 'tabular-nums'
+          }}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            {formatTime(timeLeft)}
+          </div>
+          <div style={{ fontWeight: '500', color: 'var(--text-muted)' }}>
+            Pregunta {currentIndex + 1} de {questions.length}
+          </div>
         </div>
       </header>
       
@@ -255,7 +304,7 @@ function ExamContent() {
             </div>
             
             {isLastQuestion ? (
-              <button className="btn btn-primary" onClick={handleSubmit} disabled={submitting}>
+              <button className="btn btn-primary" onClick={() => handleSubmit(false)} disabled={submitting}>
                 {submitting ? "Evaluando..." : "Finalizar y Evaluar"}
               </button>
             ) : (
