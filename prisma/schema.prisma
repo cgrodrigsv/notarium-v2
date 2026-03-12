@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Para desarrollo local se usa sqlite. En producción, cambiar DATABASE_URL a PostgreSQL (Neon/Supabase).
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id              String    @id @default(uuid())
+  email           String    @unique
+  passwordHash    String
+  role            String    @default("USER") // ADMIN o USER
+  isActive        Boolean   @default(true)
+  planType        String    @default("NONE") // NONE, TRIAL, PACK
+  examsRemaining  Int       @default(0)
+  trialExpiresAt  DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  attempts        Attempt[]
+}
+
+model Question {
+  id             String          @id @default(uuid())
+  statement      String
+  legalBase      String
+  isActive       Boolean         @default(true)
+  theme          String?
+  difficulty     String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  options        Option[]
+  attemptDetails AttemptDetail[]
+}
+
+model Option {
+  id             String          @id @default(uuid())
+  questionId     String
+  question       Question        @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  text           String
+  isCorrect      Boolean         @default(false)
+  orderLetter    String // A, B, C, D
+  attemptDetails AttemptDetail[]
+}
+
+model Attempt {
+  id          String          @id @default(uuid())
+  userId      String
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mode        String // EXAM o PRACTICE
+  score       Float           @default(0)
+  percentage  Float           @default(0)
+  status      String          @default("IN_PROGRESS") // IN_PROGRESS, COMPLETED
+  startedAt   DateTime        @default(now())
+  completedAt DateTime?
+  details     AttemptDetail[]
+}
+
+model AttemptDetail {
+  id               String   @id @default(uuid())
+  attemptId        String
+  attempt          Attempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  questionId       String
+  question         Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  selectedOptionId String?
+  selectedOption   Option?  @relation(fields: [selectedOptionId], references: [id], onDelete: SetNull)
+  isCorrect        Boolean  @default(false)
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  token     String   @unique @default(uuid())
+  userId    String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
