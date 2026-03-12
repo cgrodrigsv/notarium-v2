@@ -87,3 +87,5 @@ DIRECT_URL="file:./dev.db"
 NEXTAUTH_SECRET="notarium_secret_key_for_local_dev"
 NEXTAUTH_URL="http://localhost:3000"
 ```
+
+<!-- deploy trigger -->
