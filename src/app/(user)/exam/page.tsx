@@ -126,7 +126,8 @@ function ExamContent() {
       if (res.ok) {
         router.push("/panel");
       } else {
-        alert(data.error || "Hubo un error al cancelar el examen.");
+        const errorMsg = data.details ? `${data.error}\nDetalles: ${data.details}` : (data.error || "Hubo un error al cancelar el examen.");
+        alert(errorMsg);
         setSubmitting(false);
       }
     } catch (err) {
