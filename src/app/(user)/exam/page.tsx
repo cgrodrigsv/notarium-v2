@@ -110,6 +110,32 @@ function ExamContent() {
     }
   };
 
+  const handleCancel = async () => {
+    if (!attemptId) return;
+    
+    const confirmCancel = confirm("¿Estás seguro de que deseas cancelar el examen? Tu crédito será devuelto.");
+    if (!confirmCancel) return;
+
+    setSubmitting(true);
+    try {
+      const res = await fetch(`/api/exams/${attemptId}/cancel`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      
+      if (res.ok) {
+        router.push("/panel");
+      } else {
+        alert(data.error || "Hubo un error al cancelar el examen.");
+        setSubmitting(false);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error de conexión...");
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className="container" style={{ padding: '2rem 0', display: 'flex', flexDirection: 'column', minHeight: '100vh', maxWidth: '900px' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', padding: '1rem', backgroundColor: 'var(--bg-pane)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
@@ -192,10 +218,28 @@ function ExamContent() {
             )}
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-color)' }}>
-            <button className="btn btn-secondary" onClick={handlePrevious} disabled={currentIndex === 0}>
-              Anterior
-            </button>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-color)' }}>
+            <div style={{ display: 'flex', gap: '0.8rem' }}>
+              <button className="btn btn-secondary" onClick={handlePrevious} disabled={currentIndex === 0}>
+                Anterior
+              </button>
+              
+              {currentIndex === 0 && (
+                <button 
+                  className="btn" 
+                  onClick={handleCancel} 
+                  disabled={submitting}
+                  style={{ 
+                    backgroundColor: 'rgba(248, 81, 73, 0.1)', 
+                    color: '#f85149', 
+                    border: '1px solid rgba(248, 81, 73, 0.4)',
+                    padding: '0.6rem 1.2rem'
+                  }}
+                >
+                  {submitting ? "Cancelando..." : "Cancelar Examen"}
+                </button>
+              )}
+            </div>
             
             {isLastQuestion ? (
               <button className="btn btn-primary" onClick={handleSubmit} disabled={submitting}>
