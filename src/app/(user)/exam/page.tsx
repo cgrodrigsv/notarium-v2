@@ -226,19 +226,25 @@ function ExamContent() {
               </button>
               
               {currentIndex === 0 && (
-                <button 
-                  className="btn" 
-                  onClick={handleCancel} 
-                  disabled={submitting}
-                  style={{ 
-                    backgroundColor: 'rgba(248, 81, 73, 0.1)', 
-                    color: '#f85149', 
-                    border: '1px solid rgba(248, 81, 73, 0.4)',
-                    padding: '0.6rem 1.2rem'
-                  }}
-                >
-                  {submitting ? "Cancelando..." : "Cancelar Examen"}
-                </button>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  <button 
+                    className="btn" 
+                    onClick={handleCancel} 
+                    disabled={submitting}
+                    style={{ 
+                      backgroundColor: 'rgba(248, 81, 73, 0.1)', 
+                      color: '#f85149', 
+                      border: '1px solid rgba(248, 81, 73, 0.4)',
+                      padding: '0.6rem 1.2rem',
+                      width: 'fit-content'
+                    }}
+                  >
+                    {submitting ? "Cancelando..." : "Cancelar Examen"}
+                  </button>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                    * La cancelación con devolución de crédito solo es válida en la pregunta 1.
+                  </span>
+                </div>
               )}
             </div>
             
