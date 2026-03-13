@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic';
 
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, Suspense, useRef } from "react";
 
 function ExamContent() {
   const { data: session, status } = useSession();
@@ -15,6 +15,13 @@ function ExamContent() {
   const [attemptId, setAttemptId] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  
+  // Use a Ref to keep track of the latest answers for the timer submission (avoids stale closures)
+  const answersStateRef = useRef(answers);
+  useEffect(() => {
+    answersStateRef.current = answers;
+  }, [answers]);
+
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<Record<string, boolean>>({}); // For Practice mode
@@ -27,8 +34,9 @@ function ExamContent() {
   }, [status, router]);
 
   useEffect(() => {
-    if (status === "authenticated" && session?.user?.id) {
-      // In a real app we'd fetch actual userId safely, NextAuth session requires custom typing or callbacks
+    // Only generate an exam if we don't have one yet and are not currently submitting
+    // This prevents re-generating (and losing credits) when NextAuth refreshes the session on window focus (Alt+Tab)
+    if (status === "authenticated" && session?.user && !attemptId && loading) {
       const payloadUserId = (session.user as any).id || "admin-or-user-id";
       
       fetch("/api/exams/generate", {
@@ -53,10 +61,14 @@ function ExamContent() {
         setLoading(false);
       });
     }
-  }, [status, session, mode, router]);
+    // We include all dependencies used inside the effect to satisfy the linter
+  }, [status, session, mode, router, attemptId, loading]);
 
   const handleSubmit = async (isAuto = false) => {
-    if (!isAuto && Object.keys(answers).length < questions.length) {
+    // When auto-submitting (timer run out), use the ref to get the most recent answers
+    const currentAnswers = isAuto ? answersStateRef.current : answers;
+
+    if (!isAuto && Object.keys(currentAnswers).length < questions.length) {
       const confirmIncomplete = confirm("No has respondido todas las preguntas. ¿Estás seguro de enviar el examen?");
       if (!confirmIncomplete) return;
     }
@@ -66,7 +78,7 @@ function ExamContent() {
       const res = await fetch("/api/exams/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ attemptId, answers })
+        body: JSON.stringify({ attemptId, answers: currentAnswers })
       });
       const data = await res.json();
       
