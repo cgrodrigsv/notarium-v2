@@ -13,7 +13,7 @@ export async function POST(request: Request) {
     if (geminiKey) {
       // --- REAL GEMINI INTEGRATION ---
       const genAI = new GoogleGenerativeAI(geminiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
       const isCorrect = selectedOptionId === correctOptionId;
       const selectedOpt = options.find((o: any) => o.id === selectedOptionId);
