@@ -144,11 +144,14 @@ export default function UserDashboard() {
           </div>
 
           <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-            <h3>Modo Práctica</h3>
-            <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem', flex: 1 }}>
-              Sesión de 20 preguntas con retroalimentación inmediata sobre la base legal tras cada respuesta.
+            <h3>Modo Práctica Guiada</h3>
+            <p style={{ color: 'var(--text-muted)', marginBottom: '0.5rem', flex: 1 }}>
+              Evalúate sin presión de tiempo y consulta al <strong style={{color: 'var(--accent-color)'}}>Tutor IA</strong> después de finalizar para analizar la base legal de tus errores.
             </p>
-            <button className="btn btn-secondary" onClick={() => router.push('/exam?mode=PRACTICE')}>Iniciar Práctica</button>
+            <p style={{ fontSize: '0.85rem', color: 'var(--warning-color, #e3a008)', fontWeight: 600, marginBottom: '1.5rem' }}>
+              ⚠️ Este modo consume 1 crédito de tu plan.
+            </p>
+            <button className="btn btn-secondary" onClick={() => router.push('/exam?mode=PRACTICE')}>Iniciar Práctica (1 Crédito)</button>
           </div>
         </section>
       </main>

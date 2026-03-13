@@ -84,14 +84,14 @@ export async function POST(request: Request) {
 
     console.log(`Fetched details for ${questions.length} questions.`);
 
-    // 3. Create Attempt and decrement examsRemaining
+      // 3. Create Attempt and decrement examsRemaining
     console.log("Creating attempt and updating user...");
     const [attempt] = await prisma.$transaction([
       prisma.attempt.create({
         data: { userId, mode, status: "IN_PROGRESS" },
       }),
-      // Only decrement for non-admin users in EXAM mode
-      ...(user.role !== "ADMIN" && mode === "EXAM" ? [
+      // Decrement for non-admin users in ALL modes (EXAM and PRACTICE)
+      ...(user.role !== "ADMIN" ? [
         prisma.user.update({
           where: { id: userId },
           data: { examsRemaining: { decrement: 1 } },
