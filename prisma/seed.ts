@@ -10,7 +10,7 @@ async function main() {
 
   const admin = await prisma.user.upsert({
     where: { email: 'admin@notarium.com' },
-    update: {},
+    update: { passwordHash: hash },
     create: {
       email: 'admin@notarium.com',
       passwordHash: hash,
@@ -20,11 +20,36 @@ async function main() {
 
   const user = await prisma.user.upsert({
     where: { email: 'student@notarium.com' },
-    update: {},
+    update: { passwordHash: hash },
     create: {
       email: 'student@notarium.com',
       passwordHash: hash,
       role: 'USER',
+    },
+  })
+
+  // Adding the users the user was testing with
+  await prisma.user.upsert({
+    where: { email: 'usuario01@notarium.com' },
+    update: { passwordHash: hash },
+    create: {
+      email: 'usuario01@notarium.com',
+      passwordHash: hash,
+      role: 'USER',
+      planType: 'TRIAL',
+      examsRemaining: 5
+    },
+  })
+
+  await prisma.user.upsert({
+    where: { email: 'usuario02@notarium.com' },
+    update: { passwordHash: hash },
+    create: {
+      email: 'usuario02@notarium.com',
+      passwordHash: hash,
+      role: 'USER',
+      planType: 'PACK',
+      examsRemaining: 10
     },
   })
 
