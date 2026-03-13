@@ -24,41 +24,29 @@ export async function POST(request: Request) {
         Tu tarea es explicar de manera pedagógica y técnica por qué una respuesta es correcta y por qué otra es incorrecta.
 
         CASO/PREGUNTA: "${statement}"
-        FUNDAMENTO LEGAL PROPORCIONADO: "${legalBase}"
+        FUNDAMENTO LEGAL PROPORCIONADO: "${legalBase || 'No se proporcionó una base legal específica para esta pregunta, utiliza tus conocimientos generales de derecho para responder.'}"
         
         SITUACIÓN DEL ESTUDIANTE:
-        - El estudiante eligió la opción: "${selectedOpt?.text}" (${selectedOpt?.orderLetter})
-        - La respuesta correcta es: "${correctOpt?.text}" (${correctOpt?.orderLetter})
+        - El estudiante eligió la opción: "${selectedOpt?.text || 'Sin selección'}" (${selectedOpt?.orderLetter || '?'})
+        - La respuesta correcta es: "${correctOpt?.text || 'No definida'}" (${correctOpt?.orderLetter || '?'})
         - ¿Es correcta la elección del estudiante?: ${isCorrect ? 'SÍ' : 'NO'}
 
         INSTRUCCIONES:
-        1. Comienza validando o corrigiendo la respuesta con tono profesional.
-        2. Explica la aplicación de la norma citada (${legalBase}) al caso concreto.
-        3. No inventes leyes, básate estrictamente en el fundamento legal y el razonamiento jurídico lógico.
+        1. Comienza validando o corrigiendo la respuesta con tono profesional y motivador.
+        2. Explica la aplicación de la norma jurídica aplicable al caso concreto.
+        3. Si no hay una base legal citada, argumenta basándote en la doctrina jurídica estándar.
         4. Responde en español, usando Markdown para negritas y estructura.
-        5. Sé conciso pero profundo.
+        5. Sé conciso pero profundo. Máximo 3 párrafos cortos.
       `;
 
       const result = await model.generateContent(prompt);
       explanation = result.response.text();
-
     } else if (openAIKey) {
-      // Placeholder for OpenAI if ever needed
-      explanation = "Conexión con OpenAI detectada. Generando explicación (Simulación)...";
+      // Placeholder: Podríamos expandir aquí para OpenAI en el futuro si falla Gemini
+      explanation = "Conexión con OpenAI detectada, pero el sistema está configurado para priorizar Gemini. Por favor, asegúrate de activar GOOGLE_GENERATIVE_AI_API_KEY.";
     } else {
-      // --- HIGH QUALITY SIMULATION (FALLBACK) ---
-      const isCorrect = selectedOptionId === correctOptionId;
-      const selectedOpt = options.find((o: any) => o.id === selectedOptionId);
-      const correctOpt = options.find((o: any) => o.id === correctOptionId);
-
-      explanation = `### Tutor IA (Modo Simulación)\n\n`;
-      explanation += isCorrect 
-        ? `¡Muy bien! Has aplicado correctamente la normativa jurídica. ` 
-        : `Has marcado la opción **${selectedOpt?.orderLetter}**, pero la respuesta jurídicamente válida es la **${correctOpt?.orderLetter}**. `;
-
-      explanation += `\n\n**Fundamento Técnico:**\nLa normativa citada (**${legalBase}**) establece los requisitos de validez aplicables a este supuesto. La opción **${correctOpt?.orderLetter}** es la única que cumple con la literalidad exigida por la ley en este caso específico de ${statement.substring(0, 30)}...`;
-      
-      explanation += `\n\n*Nota: Para obtener explicaciones detalladas y razonadas por IA real, configura tu clave API en el panel de Vercel.*`;
+      // --- FALLBACK MESSAGING ---
+      explanation = "### Sistema de Tutoría en Espera\n\nNo se ha detectado una clave de API configurada en Vercel (GOOGLE_GENERATIVE_AI_API_KEY). Por favor, asegúrate de agregar la clave en los ajustes de Vercel y realizar un **Redeploy** para activar el Tutor real.";
     }
 
     return NextResponse.json({ explanation });
