@@ -1,39 +1,64 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export async function POST(request: Request) {
   try {
     const { questionId, selectedOptionId, correctOptionId, statement, legalBase, options } = await request.json();
 
-    // In a real production app, you would call OpenAI/Gemini here.
-    // Since we are in a demo/development stage, I'll create a simulated structured prompt 
-    // and a "smart" local generator that explains based on the provided legalBase.
-    
-    // Check if we have an API key (optional for now, using simulation if not found)
-    const apiKey = process.env.OPENAI_API_KEY;
+    const geminiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+    const openAIKey = process.env.OPENAI_API_KEY;
 
     let explanation = "";
 
-    if (apiKey) {
-      // Logic for real AI call would go here
-      explanation = "Esta es una explicación generada por IA conectada a la base legal " + legalBase;
-    } else {
-      // High-quality simulated response based on the question context
+    if (geminiKey) {
+      // --- REAL GEMINI INTEGRATION ---
+      const genAI = new GoogleGenerativeAI(geminiKey);
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
       const isCorrect = selectedOptionId === correctOptionId;
       const selectedOpt = options.find((o: any) => o.id === selectedOptionId);
       const correctOpt = options.find((o: any) => o.id === correctOptionId);
 
-      explanation = `### Análisis Jurídico\n\n`;
-      
-      if (isCorrect) {
-        explanation += `¡Correcto! Has identificado adecuadamente la aplicación de la norma. `;
-      } else {
-        explanation += `Has seleccionado la opción **${selectedOpt?.orderLetter}**, sin embargo, la respuesta correcta es la **${correctOpt?.orderLetter}**. `;
-      }
+      const prompt = `
+        Actúa como un profesor experto en Derecho Notarial y Civil para exámenes de suficiencia profesional.
+        Tu tarea es explicar de manera pedagógica y técnica por qué una respuesta es correcta y por qué otra es incorrecta.
 
-      explanation += `\n\n**Fundamento Técnico:**\nSegún lo establecido en **${legalBase}**, la interpretación correcta del caso planteado indica que ${statement.toLowerCase().includes('notario') ? 'el quehacer notarial' : 'el marco legal'} exige el cumplimiento estricto de las formalidades descritas en dicha base normativa. `;
+        CASO/PREGUNTA: "${statement}"
+        FUNDAMENTO LEGAL PROPORCIONADO: "${legalBase}"
+        
+        SITUACIÓN DEL ESTUDIANTE:
+        - El estudiante eligió la opción: "${selectedOpt?.text}" (${selectedOpt?.orderLetter})
+        - La respuesta correcta es: "${correctOpt?.text}" (${correctOpt?.orderLetter})
+        - ¿Es correcta la elección del estudiante?: ${isCorrect ? 'SÍ' : 'NO'}
+
+        INSTRUCCIONES:
+        1. Comienza validando o corrigiendo la respuesta con tono profesional.
+        2. Explica la aplicación de la norma citada (${legalBase}) al caso concreto.
+        3. No inventes leyes, básate estrictamente en el fundamento legal y el razonamiento jurídico lógico.
+        4. Responde en español, usando Markdown para negritas y estructura.
+        5. Sé conciso pero profundo.
+      `;
+
+      const result = await model.generateContent(prompt);
+      explanation = result.response.text();
+
+    } else if (openAIKey) {
+      // Placeholder for OpenAI if ever needed
+      explanation = "Conexión con OpenAI detectada. Generando explicación (Simulación)...";
+    } else {
+      // --- HIGH QUALITY SIMULATION (FALLBACK) ---
+      const isCorrect = selectedOptionId === correctOptionId;
+      const selectedOpt = options.find((o: any) => o.id === selectedOptionId);
+      const correctOpt = options.find((o: any) => o.id === correctOptionId);
+
+      explanation = `### Tutor IA (Modo Simulación)\n\n`;
+      explanation += isCorrect 
+        ? `¡Muy bien! Has aplicado correctamente la normativa jurídica. ` 
+        : `Has marcado la opción **${selectedOpt?.orderLetter}**, pero la respuesta jurídicamente válida es la **${correctOpt?.orderLetter}**. `;
+
+      explanation += `\n\n**Fundamento Técnico:**\nLa normativa citada (**${legalBase}**) establece los requisitos de validez aplicables a este supuesto. La opción **${correctOpt?.orderLetter}** es la única que cumple con la literalidad exigida por la ley en este caso específico de ${statement.substring(0, 30)}...`;
       
-      explanation += `\n\nLa opción **${correctOpt?.orderLetter}** es la única que se ajusta plenamente a la literalidad y el espíritu de la ley citada, mientras que las otras opciones presentan interpretaciones parciales o erróneas de los hechos jurídicos expuestos.`;
+      explanation += `\n\n*Nota: Para obtener explicaciones detalladas y razonadas por IA real, configura tu clave API en el panel de Vercel.*`;
     }
 
     return NextResponse.json({ explanation });

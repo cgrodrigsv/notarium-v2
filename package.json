@@ -13,6 +13,7 @@
     "db:postgres": "node prisma/use-db.js postgres && prisma generate"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@prisma/client": "^5.22.0",
     "@types/papaparse": "^5.5.2",
     "bcrypt": "^6.0.0",
