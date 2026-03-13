@@ -27,6 +27,39 @@ function ExamContent() {
   const [feedback, setFeedback] = useState<Record<string, boolean>>({}); // For Practice mode
   const [timeLeft, setTimeLeft] = useState(90 * 60); // 90 minutes in seconds
 
+  // --- NEW: TAB SWITCHING PROTECTION ---
+  const [showWarning, setShowWarning] = useState(false);
+  const [warningCount, setWarningCount] = useState(0);
+  const lastBlurTime = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (loading || !attemptId || submitting) return;
+
+    const handleBlur = () => {
+      lastBlurTime.current = Date.now();
+    };
+
+    const handleFocus = () => {
+      if (lastBlurTime.current) {
+        const timeAway = Date.now() - lastBlurTime.current;
+        // If the user was away for more than 2 seconds, count as a violation
+        if (timeAway > 2000) {
+          setShowWarning(true);
+          setWarningCount(prev => prev + 1);
+        }
+        lastBlurTime.current = null;
+      }
+    };
+
+    window.addEventListener('blur', handleBlur);
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      window.removeEventListener('blur', handleBlur);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [loading, attemptId, submitting]);
+  // ---------------------------------------
+
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login");
@@ -181,7 +214,49 @@ function ExamContent() {
   };
 
   return (
-    <div className="container" style={{ padding: '2rem 0', display: 'flex', flexDirection: 'column', minHeight: '100vh', maxWidth: '900px' }}>
+    <div className="container" style={{ padding: '2rem 0', display: 'flex', flexDirection: 'column', minHeight: '100vh', maxWidth: '900px', position: 'relative' }}>
+      
+      {/* WARNING MODAL */}
+      {showWarning && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 9999,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem'
+        }}>
+          <div className="glass-panel" style={{ 
+            maxWidth: '500px', width: '100%', padding: '2.5rem', textAlign: 'center',
+            border: '2px solid var(--danger-color)', animation: 'pulse 2s infinite'
+          }}>
+            <div style={{ color: 'var(--danger-color)', marginBottom: '1.5rem' }}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            <h2 style={{ fontSize: '1.8rem', color: '#fff', marginBottom: '1rem' }}>¡ATENCIÓN!</h2>
+            <p style={{ fontSize: '1.1rem', color: 'var(--text-main)', marginBottom: '1.5rem', lineHeight: '1.6' }}>
+              Has salido de la ventana del examen. Esta acción se registra para el reporte de integridad.
+            </p>
+            <div style={{ 
+              backgroundColor: 'rgba(248, 81, 73, 0.15)', padding: '1rem', 
+              borderRadius: 'var(--radius-md)', marginBottom: '2rem',
+              border: '1px solid var(--danger-color)'
+            }}>
+              <p style={{ fontWeight: 700, color: '#f85149', margin: 0 }}>
+                Advertencia #{warningCount}
+              </p>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                Si excedes el límite de salidas, el examen podría ser invalidado automáticamente.
+              </p>
+            </div>
+            <button 
+              className="btn btn-primary" 
+              style={{ width: '100%', padding: '1rem', fontSize: '1.1rem', backgroundColor: 'var(--danger-color)' }}
+              onClick={() => setShowWarning(false)}
+            >
+              Entiendo y deseo continuar
+            </button>
+          </div>
+        </div>
+      )}
+
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', padding: '1rem', backgroundColor: 'var(--bg-pane)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
         <h2 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--accent-color)' }}>
           {mode === "EXAM" ? "Simulador de Examen de Notariado" : "Modo Práctica Guiada"}
