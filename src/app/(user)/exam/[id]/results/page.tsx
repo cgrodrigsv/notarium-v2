@@ -126,11 +126,19 @@ export default function ExamResultsPage({ params }: { params: Promise<{ id: stri
               </div>
 
               {question.legalBase && (
-                <div style={{ backgroundColor: 'rgba(88, 166, 255, 0.1)', border: '1px solid var(--accent-color)', borderLeft: '4px solid var(--accent-color)', padding: '1rem', borderRadius: 'var(--radius-sm)' }}>
+                <div style={{ backgroundColor: 'rgba(88, 166, 255, 0.1)', border: '1px solid var(--accent-color)', borderLeft: '4px solid var(--accent-color)', padding: '1rem', borderRadius: 'var(--radius-sm)', marginBottom: '1rem' }}>
                   <span style={{ fontWeight: 600, color: 'var(--accent-color)', display: 'block', marginBottom: '0.5rem' }}>Fundamento Legal / Base Legal: </span>
                   <span style={{ color: 'var(--text-main)', fontSize: '0.95rem', lineHeight: 1.6 }}>{question.legalBase}</span>
                 </div>
               )}
+
+              {/* AI Explanation Feature */}
+              <AIExplanation 
+                question={question} 
+                selectedOptionId={detail.selectedOptionId}
+                correctOptionId={options.find((o: any) => o.isCorrect)?.id}
+                options={options}
+              />
             </div>
           );
         })}
@@ -141,6 +149,86 @@ export default function ExamResultsPage({ params }: { params: Promise<{ id: stri
           Volver al Panel Principal
         </Link>
       </div>
+    </div>
+  );
+}
+
+function AIExplanation({ question, selectedOptionId, correctOptionId, options }: any) {
+  const [explanation, setExplanation] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [show, setShow] = useState(false);
+
+  const handleExplain = async () => {
+    if (explanation) {
+      setShow(!show);
+      return;
+    }
+
+    setLoading(true);
+    setShow(true);
+    try {
+      const res = await fetch('/api/ai/explain', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          questionId: question.id,
+          selectedOptionId,
+          correctOptionId,
+          statement: question.statement,
+          legalBase: question.legalBase,
+          options
+        })
+      });
+      const data = await res.json();
+      setExplanation(data.explanation);
+    } catch (err) {
+      console.error(err);
+      setExplanation("No se pudo conectar con el servicio de IA. Inténtalo más tarde.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{ marginTop: '1rem' }}>
+      <button 
+        onClick={handleExplain}
+        disabled={loading}
+        style={{
+          display: 'flex', alignItems: 'center', gap: '0.5rem',
+          backgroundColor: 'transparent', color: 'var(--accent-color)',
+          border: '1px solid var(--accent-color)', padding: '0.5rem 1rem',
+          borderRadius: 'var(--radius-md)', cursor: 'pointer',
+          fontSize: '0.9rem', fontWeight: 600, transition: 'all 0.2s'
+        }}
+        onMouseOver={(e) => (e.currentTarget.style.backgroundColor = 'rgba(88, 166, 255, 0.1)')}
+        onMouseOut={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/><path d="M12 12L2.1 12.1"/><path d="M12 12l9.9 0.1"/><path d="M12 12l0 9.9"/><path d="M12 12l-9.9-0.1"/><circle cx="12" cy="12" r="3"/></svg>
+        {loading ? "Generando explicación..." : (show ? "Ocultar Explicación" : "Consultar Tutor IA")}
+      </button>
+
+      {show && (
+        <div style={{ 
+          marginTop: '1rem', padding: '1.2rem', 
+          backgroundColor: 'var(--bg-color)', borderRadius: 'var(--radius-md)',
+          border: '1px solid var(--border-color)', borderLeft: '4px solid var(--success-color)',
+          position: 'relative', animation: 'fadeIn 0.3s ease'
+        }}>
+          {loading ? (
+            <div style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Analizando base legal...</div>
+          ) : (
+            <div style={{ fontSize: '0.95rem', lineHeight: 1.7, color: 'var(--text-main)', whiteSpace: 'pre-line' }}>
+              {explanation}
+            </div>
+          )}
+          <div style={{ 
+            position: 'absolute', top: '-10px', left: '20px', 
+            width: 0, height: 0, borderLeft: '10px solid transparent', 
+            borderRight: '10px solid transparent', borderBottom: '10px solid var(--border-color)' 
+          }} />
+        </div>
+      )}
     </div>
   );
 }
