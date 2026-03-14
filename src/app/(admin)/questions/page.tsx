@@ -17,6 +17,8 @@ export default function BasicQuestionBank() {
   const [clearing, setClearing] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<QuestionType | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
+  const [hasCheckedParam, setHasCheckedParam] = useState(false);
+  const [savingEdit, setSavingEdit] = useState(false);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -40,6 +42,19 @@ export default function BasicQuestionBank() {
       router.push("/panel");
     }
   }, [session, router]);
+
+  useEffect(() => {
+    // If questions are loaded and we haven't checked the param yet
+    if (!loading && !hasCheckedParam && typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("action") === "new") {
+        openCreateModal();
+        // clean url
+        router.replace("/questions");
+      }
+      setHasCheckedParam(true);
+    }
+  }, [loading, hasCheckedParam, router]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -74,7 +89,7 @@ export default function BasicQuestionBank() {
   };
 
   const openEditModal = (q: QuestionType) => {
-    let clonedOptions = q.options ? [...q.options] : [];
+    const clonedOptions = q.options ? [...q.options] : [];
     while (clonedOptions.length < 4) {
       clonedOptions.push({
         text: '',
@@ -85,21 +100,45 @@ export default function BasicQuestionBank() {
     setEditingQuestion({ ...q, options: clonedOptions });
   };
 
+  const openCreateModal = () => {
+    setEditingQuestion({
+      statement: '',
+      legalBase: '',
+      isActive: true,
+      options: [
+        { text: '', isCorrect: true, orderLetter: 'A' },
+        { text: '', isCorrect: false, orderLetter: 'B' },
+        { text: '', isCorrect: false, orderLetter: 'C' },
+        { text: '', isCorrect: false, orderLetter: 'D' }
+      ]
+    });
+  };
+
   const handleEditSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingQuestion) return;
 
     setSavingEdit(true);
     try {
-      const res = await fetch(`/api/questions/${editingQuestion.id}`, {
-        method: "PUT",
+      const isNew = !editingQuestion.id;
+      const url = isNew ? "/api/questions" : `/api/questions/${editingQuestion.id}`;
+      const method = isNew ? "POST" : "PUT";
+
+      const res = await fetch(url, {
+        method: method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(editingQuestion)
       });
       const data = await res.json();
       
       if (res.ok) {
-        setQuestions(questions.map(q => q.id === editingQuestion.id ? data : q));
+        if (isNew) {
+           // We expect the new question in the response `data` or maybe `data.question` depending on the API
+           // Based on route.ts POST, it returns the generated question directly.
+           setQuestions([data, ...questions]);
+        } else {
+           setQuestions(questions.map(q => q.id === editingQuestion.id ? data : q));
+        }
         setEditingQuestion(null);
       } else {
         alert(data.error || "Ocurrió un error al guardar.");
@@ -155,6 +194,13 @@ export default function BasicQuestionBank() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
             <h2>Listado de Preguntas ({questions.length})</h2>
             <div style={{ display: 'flex', gap: '1rem' }}>
+              <button 
+                onClick={openCreateModal} disabled={clearing || uploading} 
+                className="btn btn-primary" 
+                style={{ backgroundColor: 'var(--success-color)', color: 'white', borderColor: 'var(--success-color)' }}
+              >
+                + Nueva Pregunta
+              </button>
               <button 
                 onClick={handleClearBank} disabled={clearing || uploading} 
                 className="btn btn-secondary" 
@@ -212,11 +258,13 @@ export default function BasicQuestionBank() {
         </section>
       </main>
 
-      {/* EDIT MODAL */}
+      {/* EDIT/CREATE MODAL */}
       {editingQuestion && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
           <div className="glass-panel" style={{ width: '100%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto', padding: '2rem' }}>
-            <h3 style={{ marginTop: 0, marginBottom: '1.5rem', color: 'var(--accent-color)' }}>Editar Pregunta</h3>
+            <h3 style={{ marginTop: 0, marginBottom: '1.5rem', color: 'var(--accent-color)' }}>
+              {editingQuestion.id ? "Editar Pregunta" : "Nueva Pregunta"}
+            </h3>
             <form onSubmit={handleEditSave} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div><label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Enunciado</label>
                 <textarea required className="input-field" value={editingQuestion.statement} onChange={e => setEditingQuestion({...editingQuestion, statement: e.target.value})} style={{ minHeight: '80px', resize: 'vertical' }}/>

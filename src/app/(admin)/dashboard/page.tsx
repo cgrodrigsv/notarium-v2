@@ -119,7 +119,7 @@ export default function AdminDashboard() {
             <h3 style={{ fontSize: '0.85rem', color: 'var(--text-muted)', letterSpacing: '1px' }}>ACCIONES RÁPIDAS</h3>
             
             <div className="quick-actions">
-              <div className="action-btn" onClick={() => alert("Usa la importación CSV por ahora")}>
+              <div className="action-btn" onClick={() => router.push('/questions?action=new')}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
                   <span style={{ fontSize: '1.2rem' }}>➕</span> Nueva Pregunta
                 </div>
