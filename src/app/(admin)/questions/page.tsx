@@ -18,7 +18,6 @@ export default function BasicQuestionBank() {
   const [editingQuestion, setEditingQuestion] = useState<QuestionType | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
   const [hasCheckedParam, setHasCheckedParam] = useState(false);
-  const [savingEdit, setSavingEdit] = useState(false);
 
   useEffect(() => {
     if (status === "unauthenticated") {
