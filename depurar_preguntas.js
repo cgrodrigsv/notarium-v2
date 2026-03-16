@@ -44,17 +44,18 @@ async function main() {
     const correctOpt = q.options.find(o => o.isCorrect);
 
     const prompt = `
-      Eres un experto en Derecho de El Salvador (Civil, Mercantil, Notarial, Procesal, etc.).
-      Te daré una pregunta de opción múltiple de un examen de suficiencia con su respuesta correcta.
-      Tu tarea es decirme de forma directa el FUNDAMENTO LEGAL o BASE LEGAL exacta aplicable.
+      Eres un experto en Derecho de la República de El Salvador.
+      Tu conocimiento se limita ESTRICTAMENTE a la legislación salvadoreña vigente (Código Civil, Ley de Notariado, Código de Comercio, Código Procesal Civil y Mercantil, etc.).
+      Te daré una pregunta de un examen de suficiencia y debes identificar el FUNDAMENTO LEGAL EXACTO dentro del marco jurídico de El Salvador.
       
-      No des explicaciones largas ni saludos. Dame SOLO la cita del artículo y código/ley.
+      No des explicaciones, ni introducciones, ni saludos. No menciones leyes de otros países.
+      Dame SOLO la cita del artículo y el nombre de la ley/código salvadoreño.
       EJEMPLOS: "Art. 1205 del Código Civil." o "Art. 32 de la Ley de Notariado."
       
       PREGUNTA: "${q.statement}"
       RESPUESTA CORRECTA: "${correctOpt ? correctOpt.text : 'Desconocida'}"
       
-      BASE LEGAL EXACTA:
+      FUNDAMENTO LEGAL SALVADOREÑO:
     `;
 
     try {

@@ -20,23 +20,23 @@ export async function POST(request: Request) {
       const correctOpt = options.find((o: any) => o.id === correctOptionId);
 
       const prompt = `
-        Actúa como un profesor experto en Derecho Notarial y Civil para exámenes de suficiencia profesional.
-        Tu tarea es explicar de manera pedagógica y técnica por qué una respuesta es correcta y por qué otra es incorrecta.
+        Actúa como un profesor experto en Derecho de El Salvador, especializado en las áreas Notarial, Civil, Mercantil y Procesal para exámenes de suficiencia profesional.
+        Toda tu asesoría y explicaciones deben basarse ESTRICTAMENTE y exclusivamente en la legislación vigente de la República de El Salvador.
 
         CASO/PREGUNTA: "${statement}"
-        FUNDAMENTO LEGAL PROPORCIONADO: "${legalBase || 'No se proporcionó una base legal específica para esta pregunta, utiliza tus conocimientos generales de derecho para responder.'}"
+        FUNDAMENTO LEGAL PROPORCIONADO: "${legalBase || 'No se proporcionó una base legal específica.'}"
         
         SITUACIÓN DEL ESTUDIANTE:
         - El estudiante eligió la opción: "${selectedOpt?.text || 'Sin selección'}" (${selectedOpt?.orderLetter || '?'})
         - La respuesta correcta es: "${correctOpt?.text || 'No definida'}" (${correctOpt?.orderLetter || '?'})
         - ¿Es correcta la elección del estudiante?: ${isCorrect ? 'SÍ' : 'NO'}
 
-        INSTRUCCIONES:
-        1. Comienza validando o corrigiendo la respuesta con tono profesional y motivador.
-        2. Explica la aplicación de la norma jurídica aplicable al caso concreto.
-        3. Si no hay una base legal citada, argumenta basándote en la doctrina jurídica estándar.
-        4. Responde en español, usando Markdown para negritas y estructura.
-        5. Sé conciso pero profundo. Máximo 3 párrafos cortos.
+        INSTRUCCIONES CRÍTICAS:
+        1. Tu respuesta debe fundamentarse ÚNICAMENTE en leyes de El Salvador.
+        2. Si no hay una base legal citada, busca y cita el artículo correspondiente en los Códigos Salvadoreños (Código Civil, Ley de Notariado, Código de Comercio, CPCC, etc.).
+        3. No utilices lógica de otras jurisdicciones ni doctrina general que contradiga o no esté contemplada en la ley salvadoreña.
+        4. Sé pedagógico, profesional y motivador. Responde en español usando Markdown.
+        5. Sé conciso pero profundo (máximo 3 párrafos cortos).
       `;
 
       const result = await model.generateContent(prompt);
