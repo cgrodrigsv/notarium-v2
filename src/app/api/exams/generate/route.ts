@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     console.log("Fetching user...");
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { planType: true, examsRemaining: true, trialExpiresAt: true, role: true }
+      select: { planType: true, examsRemaining: true, practicesRemaining: true, simulationsRemaining: true, trialExpiresAt: true, role: true }
     });
 
     if (!user) {
@@ -36,10 +36,26 @@ export async function POST(request: Request) {
         }, { status: 403 });
       }
 
-      if (user.examsRemaining <= 0) {
-        return NextResponse.json({
-          error: "Has agotado tus exámenes disponibles. Contacta al administrador para recargar tu plan."
-        }, { status: 403 });
+      // Check specific credits based on mode
+      if (mode === "SIMULATION") {
+        if (user.simulationsRemaining <= 0) {
+          return NextResponse.json({
+            error: "Has agotado tus simulacros reales. Contacta al administrador para recargar tu plan."
+          }, { status: 403 });
+        }
+      } else if (mode === "PRACTICE") {
+        if (user.practicesRemaining <= 0) {
+          return NextResponse.json({
+            error: "Has agotado tus prácticas guiadas. Verifica que tienes crédito disponible para esta modalidad."
+          }, { status: 403 });
+        }
+      } else {
+        // EXAM
+        if (user.examsRemaining <= 0) {
+          return NextResponse.json({
+            error: "Has agotado tus exámenes estándar. Contacta al administrador para recargar tu plan."
+          }, { status: 403 });
+        }
       }
     }
 
@@ -90,11 +106,15 @@ export async function POST(request: Request) {
       prisma.attempt.create({
         data: { userId, mode, status: "IN_PROGRESS" },
       }),
-      // Decrement for non-admin users in ALL modes (EXAM and PRACTICE)
+      // Decrement correct counter for non-admin users
       ...(user.role !== "ADMIN" ? [
         prisma.user.update({
           where: { id: userId },
-          data: { examsRemaining: { decrement: 1 } },
+          data: mode === "SIMULATION" 
+            ? { simulationsRemaining: { decrement: 1 } }
+            : mode === "PRACTICE" 
+              ? { practicesRemaining: { decrement: 1 } }
+              : { examsRemaining: { decrement: 1 } },
         })
       ] : [])
     ]);

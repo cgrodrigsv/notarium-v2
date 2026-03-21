@@ -37,7 +37,9 @@ async function main() {
       passwordHash: hash,
       role: 'USER',
       planType: 'TRIAL',
-      examsRemaining: 5
+      practicesRemaining: 1,
+      examsRemaining: 3,
+      simulationsRemaining: 1
     },
   })
 
@@ -49,7 +51,9 @@ async function main() {
       passwordHash: hash,
       role: 'USER',
       planType: 'PACK',
-      examsRemaining: 10
+      practicesRemaining: 2,
+      examsRemaining: 6,
+      simulationsRemaining: 2
     },
   })
 

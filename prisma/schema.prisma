@@ -16,7 +16,10 @@ model User {
   role            String    @default("USER") // ADMIN o USER
   isActive        Boolean   @default(true)
   planType        String    @default("NONE") // NONE, TRIAL, PACK
+  planName        String?   // To store the commercial name of the plan (e.g. Plan Profesional)
   examsRemaining  Int       @default(0)
+  practicesRemaining Int    @default(0)
+  simulationsRemaining Int  @default(0)
   trialExpiresAt  DateTime?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
@@ -77,4 +80,23 @@ model PasswordResetToken {
   expiresAt DateTime
   used      Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+model PricingOffer {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  price       Float
+  examsAmount Int
+  practicesAmount Int @default(0)
+  simulationsAmount Int @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Setting {
+  id    String @id @default(uuid())
+  key   String @unique
+  value String
 }

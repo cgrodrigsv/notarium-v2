@@ -10,7 +10,7 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { email, role, isActive, password, planType, examsRemaining, trialExpiresAt } = body;
+    const { email, role, isActive, password, planType, planName, examsRemaining, practicesRemaining, simulationsRemaining, trialExpiresAt } = body;
 
     const dataToUpdate: any = {};
 
@@ -18,7 +18,10 @@ export async function PUT(
     if (role !== undefined) dataToUpdate.role = role;
     if (isActive !== undefined) dataToUpdate.isActive = isActive;
     if (planType !== undefined) dataToUpdate.planType = planType;
+    if (planName !== undefined) dataToUpdate.planName = planName;
     if (examsRemaining !== undefined) dataToUpdate.examsRemaining = examsRemaining;
+    if (practicesRemaining !== undefined) dataToUpdate.practicesRemaining = practicesRemaining;
+    if (simulationsRemaining !== undefined) dataToUpdate.simulationsRemaining = simulationsRemaining;
     if (trialExpiresAt !== undefined) dataToUpdate.trialExpiresAt = trialExpiresAt;
     
     if (password) {

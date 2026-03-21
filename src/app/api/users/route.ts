@@ -14,6 +14,8 @@ export async function GET() {
         isActive: true,
         planType: true,
         examsRemaining: true,
+        practicesRemaining: true,
+        simulationsRemaining: true,
         trialExpiresAt: true,
         createdAt: true,
       }
@@ -31,7 +33,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { email, password, role, isActive, planType, examsRemaining, trialExpiresAt } = body;
+    const { email, password, role, isActive, planType, planName, examsRemaining, practicesRemaining, simulationsRemaining, trialExpiresAt } = body;
 
     if (!email || !password) {
       return NextResponse.json({ error: "Email y contraseña son obligatorios" }, { status: 400 });
@@ -51,7 +53,10 @@ export async function POST(request: Request) {
         role: role || "USER",
         isActive: isActive !== undefined ? isActive : true,
         planType: planType || "NONE",
+        planName: planName || null,
         examsRemaining: examsRemaining || 0,
+        practicesRemaining: practicesRemaining || 0,
+        simulationsRemaining: simulationsRemaining || 0,
         trialExpiresAt: trialExpiresAt || null,
       },
       select: {
@@ -61,6 +66,7 @@ export async function POST(request: Request) {
         isActive: true,
         planType: true,
         examsRemaining: true,
+        practicesRemaining: true,
         trialExpiresAt: true,
         createdAt: true,
       }

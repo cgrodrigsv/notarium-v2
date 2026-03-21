@@ -14,6 +14,8 @@ export async function GET(
       select: {
         planType: true,
         examsRemaining: true,
+        practicesRemaining: true,
+        simulationsRemaining: true,
         trialExpiresAt: true,
         role: true,
       }

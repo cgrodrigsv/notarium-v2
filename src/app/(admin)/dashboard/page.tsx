@@ -45,7 +45,7 @@ export default function AdminDashboard() {
         <h1 style={{ color: 'var(--text-main)', margin: 0 }}>Notarium Admin</h1>
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
           <span>{session?.user?.email} (Admin)</span>
-          <button onClick={() => signOut()} className="btn btn-secondary">Cerrar Sesión</button>
+          <button onClick={() => signOut({ callbackUrl: "/" })} className="btn btn-secondary">Cerrar Sesión</button>
         </div>
       </header>
       
@@ -110,6 +110,44 @@ export default function AdminDashboard() {
                 style={{ width: '100%', textDecoration: 'none', backgroundColor: 'var(--success-color)', display: 'block', textAlign: 'center' }}
               >
                 Ir al módulo →
+              </Link>
+            </div>
+
+            <div className="module-card">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ padding: '1rem', background: 'var(--bg-hover)', borderRadius: 'var(--radius-md)' }}>
+                  <span role="img" aria-label="pricing" style={{ fontSize: '1.5rem' }}>💰</span>
+                </div>
+                <div>
+                  <h3 style={{ margin: 0 }}>Planes y Precios</h3>
+                  <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>Configurar ofertas de exámenes y precios para usuarios.</p>
+                </div>
+              </div>
+              <Link 
+                href="/plans"
+                className="btn btn-secondary" 
+                style={{ width: '100%', textDecoration: 'none', display: 'block', textAlign: 'center' }}
+              >
+                Gestionar Planes →
+              </Link>
+            </div>
+
+            <div className="module-card">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ padding: '1rem', background: 'var(--bg-hover)', borderRadius: 'var(--radius-md)' }}>
+                  <span role="img" aria-label="settings" style={{ fontSize: '1.5rem' }}>⚙️</span>
+                </div>
+                <div>
+                  <h3 style={{ margin: 0 }}>Ajustes de Empresa</h3>
+                  <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>Configurar número de WhatsApp para ventas y otras variables globales.</p>
+                </div>
+              </div>
+              <Link 
+                href="/settings"
+                className="btn btn-secondary" 
+                style={{ width: '100%', textDecoration: 'none', display: 'block', textAlign: 'center' }}
+              >
+                Configurar Sistema →
               </Link>
             </div>
           </div>

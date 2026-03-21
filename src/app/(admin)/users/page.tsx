@@ -12,7 +12,10 @@ type User = {
   role: string;
   isActive: boolean;
   planType: string;
+  planName: string | null;
   examsRemaining: number;
+  practicesRemaining: number;
+  simulationsRemaining: number;
   trialExpiresAt: string | null;
   createdAt: string;
 };
@@ -34,6 +37,7 @@ export default function UsersAdminPage() {
   const router = useRouter();
 
   const [users, setUsers] = useState<User[]>([]);
+  const [plans, setPlans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Modal states
@@ -46,7 +50,10 @@ export default function UsersAdminPage() {
   const [role, setRole] = useState("USER");
   const [isActive, setIsActive] = useState(true);
   const [planType, setPlanType] = useState("NONE");
+  const [planName, setPlanName] = useState("");
   const [examsRemaining, setExamsRemaining] = useState(0);
+  const [practicesRemaining, setPracticesRemaining] = useState(0);
+  const [simulationsRemaining, setSimulationsRemaining] = useState(0);
   const [trialDays, setTrialDays] = useState(7);
   const [formError, setFormError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -59,6 +66,7 @@ export default function UsersAdminPage() {
         router.push("/panel");
       } else {
         fetchUsers();
+        fetchPlans();
       }
     }
   }, [status, session, router]);
@@ -76,9 +84,19 @@ export default function UsersAdminPage() {
     }
   };
 
+  const fetchPlans = async () => {
+    try {
+      const res = await fetch("/api/plans");
+      const data = await res.json();
+      if (res.ok) setPlans(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const resetForm = () => {
     setEmail(""); setPassword(""); setRole("USER"); setIsActive(true);
-    setPlanType("NONE"); setExamsRemaining(0); setTrialDays(7);
+    setPlanType("NONE"); setPlanName(""); setExamsRemaining(0); setPracticesRemaining(0); setSimulationsRemaining(0); setTrialDays(7);
     setFormError(""); setEditingUserId(null);
   };
 
@@ -91,7 +109,10 @@ export default function UsersAdminPage() {
     setRole(user.role);
     setIsActive(user.isActive);
     setPlanType(user.planType || "NONE");
+    setPlanName(user.planName || "");
     setExamsRemaining(user.examsRemaining || 0);
+    setPracticesRemaining(user.practicesRemaining || 0);
+    setSimulationsRemaining(user.simulationsRemaining || 0);
     setIsModalOpen(true);
   };
 
@@ -116,7 +137,7 @@ export default function UsersAdminPage() {
     try {
       let url = "/api/users";
       let method = "POST";
-      const payload: any = { email, role, isActive, planType, examsRemaining };
+      const payload: any = { email, role, isActive, planType, planName, examsRemaining, practicesRemaining, simulationsRemaining };
 
       if (planType === "TRIAL") {
         const expiry = new Date();
@@ -211,12 +232,14 @@ export default function UsersAdminPage() {
                       <span style={{ padding: '0.3rem 0.7rem', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 600, display: 'inline-block',
                         backgroundColor: 'rgba(0,0,0,0.1)', color: PLAN_COLORS[user.planType] || 'var(--text-muted)',
                         border: `1px solid ${PLAN_COLORS[user.planType] || 'var(--border-color)'}` }}>
-                        {PLAN_LABELS[user.planType] || user.planType}
+                        {user.planName || PLAN_LABELS[user.planType] || user.planType}
                       </span>
                       {user.planType !== 'NONE' && (
-                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', paddingLeft: '0.3rem' }}>
-                          {user.examsRemaining} exámen(es) restantes
-                        </span>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', paddingLeft: '0.3rem', display: 'flex', flexDirection: 'column' }}>
+                          <span>{user.practicesRemaining} prácticas restantes</span>
+                          <span>{user.examsRemaining} exámenes restantes</span>
+                          <span>{user.simulationsRemaining} simulacros restantes</span>
+                        </div>
                       )}
                       {user.planType === 'TRIAL' && user.trialExpiresAt && (
                         <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', paddingLeft: '0.3rem' }}>
@@ -314,18 +337,67 @@ export default function UsersAdminPage() {
                 </div>
 
                 {planType !== "NONE" && (
-                  <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-                    <div style={{ flex: 1 }}>
+                  <div style={{ marginTop: '1rem' }}>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500, fontSize: '0.9rem', color: 'var(--success-color)' }}>
+                      ⚡ Autocompletar desde Plantilla
+                    </label>
+                    <select className="input-field" style={{ padding: '0.8rem', border: '1px solid var(--success-color)' }} onChange={(e) => {
+                      const selected = plans.find(p => p.id === e.target.value);
+                      if (selected) {
+                        setPlanName(selected.name);
+                        setExamsRemaining(selected.examsAmount);
+                        setPracticesRemaining(selected.practicesAmount);
+                        setSimulationsRemaining(selected.simulationsAmount);
+                        if (selected.price === 0) {
+                          setPlanType("TRIAL");
+                          setTrialDays(7);
+                        } else {
+                          setPlanType("PACK");
+                        }
+                      }
+                    }}>
+                      <option value="">-- Seleccionar un plan comercial --</option>
+                      {plans.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    </select>
+                  </div>
+                )}
+
+                {planType !== "NONE" && (
+                  <div style={{ marginTop: '1rem' }}>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500, fontSize: '0.9rem' }}>
+                      Nombre del Plan Asignado (Visible para el alumno)
+                    </label>
+                    <input type="text" className="input-field" value={planName} onChange={e => setPlanName(e.target.value)} placeholder="Ej. Plan Avanzado" />
+                  </div>
+                )}
+
+                {planType !== "NONE" && (
+                  <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1, minWidth: '80px' }}>
                       <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500, fontSize: '0.9rem' }}>
-                        Exámenes a asignar
+                        Prácticas
+                      </label>
+                      <input type="number" min={0} className="input-field" value={practicesRemaining}
+                        onChange={(e) => setPracticesRemaining(parseInt(e.target.value) || 0)} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: '80px' }}>
+                      <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500, fontSize: '0.9rem' }}>
+                        Exámenes
                       </label>
                       <input type="number" min={0} className="input-field" value={examsRemaining}
                         onChange={(e) => setExamsRemaining(parseInt(e.target.value) || 0)} />
                     </div>
+                    <div style={{ flex: 1, minWidth: '80px' }}>
+                      <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500, fontSize: '0.9rem' }}>
+                        Simulacros
+                      </label>
+                      <input type="number" min={0} className="input-field" value={simulationsRemaining}
+                        onChange={(e) => setSimulationsRemaining(parseInt(e.target.value) || 0)} />
+                    </div>
                     {planType === "TRIAL" && (
                       <div style={{ flex: 1 }}>
                         <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500, fontSize: '0.9rem' }}>
-                          Duración (días)
+                          Días
                         </label>
                         <input type="number" min={1} className="input-field" value={trialDays}
                           onChange={(e) => setTrialDays(parseInt(e.target.value) || 7)} />
@@ -336,8 +408,8 @@ export default function UsersAdminPage() {
 
                 {planType !== "NONE" && (
                   <div style={{ marginTop: '0.8rem', padding: '0.8rem', backgroundColor: 'rgba(88,166,255,0.08)', borderRadius: 'var(--radius-sm)', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                    {planType === "TRIAL" && `El usuario tendrá acceso a ${examsRemaining} exámen(es) durante ${trialDays} días desde hoy.`}
-                    {planType === "PACK" && `El usuario tendrá acceso a ${examsRemaining} exámen(es). El acceso se bloquea automáticamente cuando se agoten.`}
+                    {planType === "TRIAL" && `El usuario tendrá acceso durante ${trialDays} días desde hoy.`}
+                    {planType === "PACK" && `El usuario tendrá acceso hasta agotar los créditos.`}
                   </div>
                 )}
               </div>
