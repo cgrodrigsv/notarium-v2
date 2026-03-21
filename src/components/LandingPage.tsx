@@ -183,11 +183,12 @@ const LandingPage = () => {
             <div className="pricing-grid">
               <div className="price-card">
                 <span className="plan-name">Básico</span>
-                <div className="plan-price">$0 <span>/ siempre</span></div>
+                <div className="plan-price">$0 <span>/ prueba</span></div>
                 <ul className="plan-features">
-                  <li>3 simulacros diarios</li>
-                  <li>Banco limitado</li>
-                  <li>Soporte básico</li>
+                  <li><strong>1</strong> Práctica sin tiempo</li>
+                  <li><strong>1</strong> Examen Estándar</li>
+                  <li><strong>1</strong> Simulacro Real</li>
+                  <li>Acceso por 7 días</li>
                 </ul>
                 <Link href="/login?signup=true" className="btn btn-secondary">Empezar gratis</Link>
               </div>
@@ -195,24 +196,24 @@ const LandingPage = () => {
               <div className="price-card featured">
                 <span className="plan-badge">Popular</span>
                 <span className="plan-name">Profesional</span>
-                <div className="plan-price">$29 <span>/ mes</span></div>
+                <div className="plan-price">$15 <span>/ único</span></div>
                 <ul className="plan-features">
-                  <li>Simulacros ilimitados</li>
-                  <li>Banco completo actualizado</li>
+                  <li><strong>4</strong> Exámenes Estándar</li>
+                  <li><strong>1</strong> Simulacro Real</li>
                   <li>Análisis de progreso detallado</li>
-                  <li>Soporte prioritario</li>
+                  <li>Créditos sin fecha de caducidad</li>
                 </ul>
-                <Link href="/login?signup=true" className="btn btn-primary">Elegir Pro</Link>
+                <Link href="/login?signup=true" className="btn btn-primary">Elegir Profesional</Link>
               </div>
 
               <div className="price-card">
-                <span className="plan-name">Vitalicio</span>
-                <div className="plan-price">$99 <span>/ único</span></div>
+                <span className="plan-name">Avanzado</span>
+                <div className="plan-price">$30 <span>/ único</span></div>
                 <ul className="plan-features">
-                  <li>Acceso de por vida</li>
-                  <li>Todas las actualizaciones</li>
-                  <li>Contenido exclusivo Pro</li>
-                  <li>Comunidad VIP</li>
+                  <li><strong>8</strong> Exámenes Estándar</li>
+                  <li><strong>2</strong> Simulacros Reales</li>
+                  <li>Retroalimentación completa</li>
+                  <li>Créditos sin fecha de caducidad</li>
                 </ul>
                 <Link href="/login?signup=true" className="btn btn-secondary">Comprar ahora</Link>
               </div>
