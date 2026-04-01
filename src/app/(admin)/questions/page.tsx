@@ -18,6 +18,9 @@ export default function BasicQuestionBank() {
   const [editingQuestion, setEditingQuestion] = useState<QuestionType | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
   const [hasCheckedParam, setHasCheckedParam] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -26,8 +29,9 @@ export default function BasicQuestionBank() {
   }, [status, router]);
 
   useEffect(() => {
-    if ((session?.user as any)?.role === "ADMIN") {
-      fetch("/api/questions?limit=500")
+    const userRole = (session?.user as { role?: string })?.role;
+    if (userRole === "ADMIN") {
+      fetch("/api/questions?limit=1000")
         .then(res => res.json())
         .then(data => {
           setQuestions(data.data || []);
@@ -37,7 +41,7 @@ export default function BasicQuestionBank() {
           console.error(err);
           setLoading(false);
         });
-    } else if (session?.user && (session.user as any)?.role !== "ADMIN") {
+    } else if (session?.user && userRole !== "ADMIN") {
       router.push("/panel");
     }
   }, [session, router]);
@@ -171,6 +175,35 @@ export default function BasicQuestionBank() {
     }
   };
 
+  const handleDeleteQuestion = async (id: string) => {
+    if (!window.confirm("¿Estás seguro de que quieres eliminar esta pregunta?")) return;
+
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/questions/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setQuestions(questions.filter(q => q.id !== id));
+      } else {
+        const data = await res.json();
+        alert(data.error || "Error al eliminar.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error de conexión.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const filteredQuestions = Array.isArray(questions) ? questions.filter(q => {
+    const matchesSearch = q.statement.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         q.legalBase.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    if (statusFilter === 'active') return matchesSearch && q.isActive;
+    if (statusFilter === 'inactive') return matchesSearch && !q.isActive;
+    return matchesSearch;
+  }) : [];
+
   if (status === "loading" || loading) {
     return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', width: '100%' }}>Cargando banco de preguntas...</div>;
   }
@@ -190,29 +223,62 @@ export default function BasicQuestionBank() {
 
       <main className="main-content">
         <section className="glass-panel" style={{ marginBottom: '2rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-            <h2>Listado de Preguntas ({questions.length})</h2>
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <button 
-                onClick={openCreateModal} disabled={clearing || uploading} 
-                className="btn btn-primary" 
-                style={{ backgroundColor: 'var(--success-color)', color: 'white', borderColor: 'var(--success-color)' }}
-              >
-                + Nueva Pregunta
-              </button>
-              <button 
-                onClick={handleClearBank} disabled={clearing || uploading} 
-                className="btn btn-secondary" 
-                style={{ backgroundColor: 'rgba(248, 81, 73, 0.1)', color: 'var(--danger-color)', borderColor: 'var(--danger-color)' }}
-              >
-                {clearing ? "Vaciando..." : "Vaciar Banco"}
-              </button>
-              <div>
-                <input type="file" accept=".csv" id="csv-upload" style={{ display: 'none' }} onChange={handleFileUpload} disabled={uploading || clearing}/>
-                <label htmlFor="csv-upload" className="btn btn-primary" style={{ cursor: (uploading || clearing) ? 'wait' : 'pointer' }}>
-                  {uploading ? "Importando..." : "Importar CSV"}
-                </label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+              <h2>Listado de Preguntas ({questions.length})</h2>
+              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                <button 
+                  onClick={openCreateModal} disabled={clearing || uploading} 
+                  className="btn btn-primary" 
+                  style={{ backgroundColor: 'var(--success-color)', color: 'white', borderColor: 'var(--success-color)' }}
+                >
+                  + Nueva Pregunta
+                </button>
+                <button 
+                  onClick={handleClearBank} disabled={clearing || uploading} 
+                  className="btn btn-secondary" 
+                  style={{ backgroundColor: 'rgba(248, 81, 73, 0.1)', color: 'var(--danger-color)', borderColor: 'var(--danger-color)' }}
+                >
+                  {clearing ? "Vaciando..." : "Vaciar Banco"}
+                </button>
+                <div>
+                  <input type="file" accept=".csv" id="csv-upload" style={{ display: 'none' }} onChange={handleFileUpload} disabled={uploading || clearing}/>
+                  <label htmlFor="csv-upload" className="btn btn-primary" style={{ cursor: (uploading || clearing) ? 'wait' : 'pointer' }}>
+                    {uploading ? "Importando..." : "Importar CSV"}
+                  </label>
+                </div>
               </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
+              <div style={{ flex: 1, minWidth: '300px' }}>
+                <input 
+                  type="text" 
+                  placeholder="Buscar por enunciado o base legal..." 
+                  className="input-field" 
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  style={{ width: '100%' }}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Filtrar:</span>
+                <select 
+                  className="input-field" 
+                  value={statusFilter} 
+                  onChange={e => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
+                  style={{ width: 'auto', padding: '0.4rem 2rem 0.4rem 0.8rem' }}
+                >
+                  <option value="all">Todas</option>
+                  <option value="active">Activas</option>
+                  <option value="inactive">Inactivas</option>
+                </select>
+              </div>
+              {searchQuery && (
+                <div style={{ fontSize: '0.9rem', color: 'var(--accent-color)' }}>
+                  Encontradas: {filteredQuestions.length}
+                </div>
+              )}
             </div>
           </div>
           
@@ -228,13 +294,16 @@ export default function BasicQuestionBank() {
                 </tr>
               </thead>
               <tbody>
-                {questions.length === 0 ? (
-                  <tr><td colSpan={5} style={{ padding: '2rem 0', textAlign: 'center', color: 'var(--text-muted)' }}>No hay preguntas registradas.</td></tr>
+                {filteredQuestions.length === 0 ? (
+                  <tr><td colSpan={5} style={{ padding: '2rem 0', textAlign: 'center', color: 'var(--text-muted)' }}>No se encontraron preguntas.</td></tr>
                 ) : (
-                  questions.map(q => (
+                  filteredQuestions.map(q => (
                     <tr key={q.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
                       <td style={{ padding: '1rem 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>{q.id?.split('-')[0]}</td>
-                      <td style={{ padding: '1rem 0', maxWidth: '300px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{q.statement}</td>
+                      <td style={{ padding: '1rem 0', maxWidth: '400px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        <div style={{ fontWeight: '500', marginBottom: '0.2rem' }}>{q.statement}</div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{q.options.length} opciones</div>
+                      </td>
                       <td style={{ padding: '1rem 0' }}>{q.legalBase}</td>
                       <td style={{ padding: '1rem 0' }}>
                         <span style={{ 
@@ -246,7 +315,17 @@ export default function BasicQuestionBank() {
                         </span>
                       </td>
                       <td style={{ padding: '1rem 0' }}>
-                        <button onClick={() => openEditModal(q)} className="btn btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}>Editar</button>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button onClick={() => openEditModal(q)} className="btn btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}>Editar</button>
+                          <button 
+                            onClick={() => q.id && handleDeleteQuestion(q.id)} 
+                            disabled={deletingId === q.id}
+                            className="btn btn-secondary" 
+                            style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem', color: 'var(--danger-color)' }}
+                          >
+                            Eliminar
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))

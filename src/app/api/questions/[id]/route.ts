@@ -68,3 +68,25 @@ export async function PUT(
     );
   }
 }
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const resolvedParams = await params;
+    const id = resolvedParams.id;
+
+    await prisma.question.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({ message: "Pregunta eliminada correctamente" }, { status: 200 });
+  } catch (error) {
+    console.error(`DELETE /api/questions/[id] error:`, error);
+    return NextResponse.json(
+      { error: "Error interno del servidor al eliminar la pregunta." },
+      { status: 500 }
+    );
+  }
+}
